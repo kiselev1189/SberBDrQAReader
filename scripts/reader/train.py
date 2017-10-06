@@ -493,6 +493,7 @@ def main(args):
                                        dev_offsets, dev_texts, dev_answers)
 
         # Save best valid
+        print(result.keys())
         if result[args.valid_metric] > stats['best_valid']:
             logger.info('Best valid: %s = %.2f (epoch %d, %d updates)' %
                         (args.valid_metric, result[args.valid_metric],

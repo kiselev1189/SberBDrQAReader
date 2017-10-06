@@ -193,7 +193,9 @@ class DocReader(object):
     # --------------------------------------------------------------------------
 
     def update(self, ex):
-        print(ex)
+        with open("/home/akis/log.txt", "w") as outfile:
+            outfile.write(str(ex))
+        logging.info(str(ex))
         """Forward a batch of examples; step the optimizer to update weights."""
         if not self.optimizer:
             raise RuntimeError('No optimizer set.')

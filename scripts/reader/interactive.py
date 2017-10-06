@@ -49,8 +49,7 @@ if args.cuda:
 else:
     logger.info('Running on CPU only.')
 
-predictor = Predictor(args.model, args.tokenizer, num_workers=0,
-                      normalize=not args.no_normalize)
+predictor = Predictor(args.model, args.tokenizer, num_workers=0, normalize=not args.no_normalize)
 if args.cuda:
     predictor.cuda()
 
