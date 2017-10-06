@@ -197,8 +197,10 @@ def process_dataset(data, tokenizer, workers=None):
                 continue
         yield {
             'id': data['qids'][idx],
-            'question': question,
-            'document': document,
+            'question': qlemma,
+            'document': lemma,
+            # 'question': question,
+            # 'document': document,
             'offsets': offsets,
             'answers': ans_tokens,
             'qlemma': qlemma,
