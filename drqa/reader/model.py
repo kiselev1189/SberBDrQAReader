@@ -193,6 +193,7 @@ class DocReader(object):
     # --------------------------------------------------------------------------
 
     def update(self, ex):
+        print(ex)
         """Forward a batch of examples; step the optimizer to update weights."""
         if not self.optimizer:
             raise RuntimeError('No optimizer set.')
@@ -215,6 +216,7 @@ class DocReader(object):
         score_s, score_e = self.network(*inputs)
 
         # Compute loss and accuracies
+
         loss = F.nll_loss(score_s, target_s) + F.nll_loss(score_e, target_e)
 
         # Clear gradients and run backward
