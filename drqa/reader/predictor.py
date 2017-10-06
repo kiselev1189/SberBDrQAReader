@@ -114,9 +114,11 @@ class Predictor(object):
         for i in range(len(questions)):
             examples.append({
                 'id': i,
-                'question': q_tokens[i].words(),
+                # 'question': q_tokens[i].words(),
+                'question': q_tokens[i].lemmas(),
                 'qlemma': q_tokens[i].lemmas(),
-                'document': d_tokens[i].words(),
+                # 'document': d_tokens[i].words(),
+                'document': d_tokens[i].lemmas(),
                 'lemma': d_tokens[i].lemmas(),
                 'pos': d_tokens[i].pos(),
                 'ner': d_tokens[i].entities(),
