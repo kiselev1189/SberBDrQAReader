@@ -187,7 +187,8 @@ def process_dataset(data, tokenizer, workers=None):
                     print(tokens['words'])
                     count_errors += 1
                 # assert(found is not None)
-                ans_tokens.append(found)
+                if found is not None:
+                    ans_tokens.append(found)
             # skep errors
             if len(ans_tokens) == 0:
                 continue
