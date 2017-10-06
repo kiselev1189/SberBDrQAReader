@@ -10,6 +10,7 @@ non-whitespace tokens.
 
 import regex
 import logging
+import pymorphy2
 from .tokenizer import Tokens, Tokenizer
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,11 @@ class SimpleTokenizer(Tokenizer):
         if len(kwargs.get('annotators', {})) > 0:
             logger.warning('%s only tokenizes! Skipping annotators: %s' %
                            (type(self).__name__, kwargs.get('annotators')))
-        self.annotators = set()
+        self.annotators = kwargs.get('annotators', {})
+        if 'lemma' in self.annotators:
+            self.ma = pymorphy2.MorphAnalyzer()
+        else:
+            self.ma = None
 
     def tokenize(self, text):
         data = []
@@ -39,7 +44,10 @@ class SimpleTokenizer(Tokenizer):
         for i in range(len(matches)):
             # Get text
             token = matches[i].group()
-
+            if self.ma is not None:
+                lemma = self.ma.parse(token)[0].normal_form
+            else:
+                lemma = None
             # Get whitespace
             span = matches[i].span()
             start_ws = span[0]
@@ -53,5 +61,8 @@ class SimpleTokenizer(Tokenizer):
                 token,
                 text[start_ws: end_ws],
                 span,
+                None,
+                lemma,
+                None,
             ))
         return Tokens(data, self.annotators)

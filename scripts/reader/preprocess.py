@@ -154,13 +154,13 @@ def process_dataset(data, tokenizer, workers=None):
     # tokenizer_class = tokenizers.get_class(tokenizer)
     tokenizer_class = SimpleTokenizer
     make_pool = partial(Pool, workers, initializer=init)
-    workers = make_pool(initargs=(tokenizer_class, {'annotators': {}}))
+    workers = make_pool(initargs=(tokenizer_class, {'annotators': {'lemma'}}))
     q_tokens = workers.map(tokenize, data['questions'])
     workers.close()
     workers.join()
 
     workers = make_pool(
-        initargs=(tokenizer_class, {'annotators': {}})
+        initargs=(tokenizer_class, {'annotators': {'lemma'}})
         # initargs=(tokenizer_class, {'annotators': {'lemma', 'pos', 'ner'}})
     )
     c_tokens = workers.map(tokenize, data['contexts'])
