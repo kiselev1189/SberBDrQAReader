@@ -110,7 +110,9 @@ def find_answer_csv(offsets, document, tokens):
     while tokens[0] == '.' or tokens[0] == '?':
         tokens = tokens[1:]
     for i in range(len(document)):
-        if i + len(tokens) > len(document):
+        # if i + len(tokens) > len(document):
+        # check
+        if i + len(tokens) >= len(document):
             break
         success = True
         for pos, token in enumerate(tokens):
@@ -122,7 +124,8 @@ def find_answer_csv(offsets, document, tokens):
 
     for i in range(len(document)):
         success = True
-        if i + len(tokens) > len(document):
+        # if i + len(tokens) > len(document):
+        if i + len(tokens) >= len(document):
             break
         for pos, token in enumerate(tokens):
             if token not in document[i + pos].lower():
