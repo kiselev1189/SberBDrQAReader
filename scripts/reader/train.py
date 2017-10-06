@@ -120,9 +120,9 @@ def add_train_args(parser):
 def set_defaults(args):
     """Make sure the commandline arguments are initialized properly."""
     # Check critical files exist
-    args.dev_json = os.path.join(args.data_dir, args.dev_json)
-    if not os.path.isfile(args.dev_json):
-        raise IOError('No such file: %s' % args.dev_json)
+    #args.dev_json = os.path.join(args.data_dir, args.dev_json)
+    #if not os.path.isfile(args.dev_json):
+    #    raise IOError('No such file: %s' % args.dev_json)
     args.train_file = os.path.join(args.data_dir, args.train_file)
     if not os.path.isfile(args.train_file):
         raise IOError('No such file: %s' % args.train_file)
