@@ -6,11 +6,12 @@
 # LICENSE file in the root directory of this source tree.
 """A script to run the DrQA reader model interactively."""
 
+import sys
+sys.path.append('.')
 import torch
 import code
 import argparse
 import logging
-import prettytable
 import time
 
 from drqa.reader import Predictor
@@ -45,7 +46,7 @@ parser.add_argument('--embedding_file', action='store',
 parser.add_argument('--batch_size', action='store',
                     help='batch size in pred', default=100)
 parser.add_argument('--num_workers', action='store',
-                    help='num workers', default=4)
+                    help='num workers', default=2)
 args = parser.parse_args()
 print(args)
 
@@ -109,7 +110,8 @@ for i in tqdm.tqdm(chunks(list(range(df.shape[0])), int(args.batch_size))):
     # pred = predictor.predict(paragraph, question, None, 1)
     result.extend(map(lambda x: x[0][0], pred))
 
+df['answer'] = result
 df['prediction'] = result
 
 import csv
-df[["paragraph_id", "question_id", "prediction"]].to_csv(PREDICTION_FILE, header=True, quoting=csv.QUOTE_NONNUMERIC, index=False)
+df[["paragraph_id", "question_id", "prediction", "answer"]].to_csv(PREDICTION_FILE, header=True, quoting=csv.QUOTE_NONNUMERIC, index=False)
