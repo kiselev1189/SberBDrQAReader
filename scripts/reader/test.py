@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 # Copyright 2017-present, Facebook, Inc.
 # All rights reserved.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
-"""A script to run the DrQA reader model interactively."""
+"""A script to run the DrQA reader model interactively for russian language."""
 
 import sys
+# add path
 sys.path.append('.')
+
 import torch
-import code
 import argparse
 import logging
-import time
+import csv
+
+import os
+import pandas as pd
+import tqdm
 
 from drqa.reader import Predictor
 
@@ -34,7 +36,7 @@ parser.add_argument('--model', type=str, default=None,
                     help='Path to model to use')
 parser.add_argument('--tokenizer', type=str, default=None,
                     help=("String option specifying tokenizer type to use "
-                          "(e.g. 'corenlp')"))
+                          "(e.g. 'SimpleTokenizer (it is hardcode)')"))
 parser.add_argument('--no-cuda', action='store_true',
                     help='Use CPU only')
 parser.add_argument('--gpu', type=int, default=-1,
@@ -48,7 +50,7 @@ parser.add_argument('--batch_size', action='store',
 parser.add_argument('--num_workers', action='store',
                     help='num workers', default=2)
 args = parser.parse_args()
-print(args)
+logging.info(str(args))
 
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 if args.cuda:
@@ -57,44 +59,20 @@ if args.cuda:
 else:
     logger.info('Running on CPU only.')
 
+# load model
 predictor = Predictor(args.model, args.tokenizer, num_workers=int(args.num_workers), normalize=not args.no_normalize, embedding_file=args.embedding_file)
+
 if args.cuda:
     predictor.cuda()
 
 
-# ------------------------------------------------------------------------------
-# Drop in to interactive mode
-# ------------------------------------------------------------------------------
-
-
-def process(document, question, candidates=None, top_n=1):
-    t0 = time.time()
-    predictions = predictor.predict(document, question, candidates, top_n)
-    table = prettytable.PrettyTable(['Rank', 'Span', 'Score'])
-    for i, p in enumerate(predictions, 1):
-        table.add_row([i, p[0], p[1]])
-    print(table)
-    print('Time: %.4f' % (time.time() - t0))
-
-
-banner = """
-DrQA Interactive Document Reader Module
->> process(document, question, candidates=None, top_n=1)
->> usage()
-"""
-
-
+# help function for split predictions on chunks
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
 
-# code.interact(banner=banner, local=locals())
-
-import os
-import pandas as pd
-import tqdm
 DATA_FILE = os.environ.get('INPUT', 'train.csv')
 PREDICTION_FILE = os.environ.get('OUTPUT', 'data/result.csv')
 
@@ -102,7 +80,6 @@ df = pd.DataFrame.from_csv(DATA_FILE, sep=',', index_col=None)
 df = df[['paragraph_id', 'question_id', 'paragraph', 'question']]
 
 result = []
-# for i in tqdm.tqdm(range(df.shape[0])):
 for i in tqdm.tqdm(chunks(list(range(df.shape[0])), int(args.batch_size))):
     paragraph = df.paragraph.iloc[i].values
     question = df.question.iloc[i].values
@@ -113,5 +90,4 @@ for i in tqdm.tqdm(chunks(list(range(df.shape[0])), int(args.batch_size))):
 df['answer'] = result
 df['prediction'] = result
 
-import csv
 df[["paragraph_id", "question_id", "prediction", "answer"]].to_csv(PREDICTION_FILE, header=True, quoting=csv.QUOTE_NONNUMERIC, index=False)

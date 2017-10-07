@@ -7,17 +7,15 @@
 """Preprocess the SQuAD dataset for training."""
 
 import argparse
-import os
-import sys
 import json
 import time
 
 from multiprocessing import Pool
 from multiprocessing.util import Finalize
 from functools import partial
-import re
 # from drqa.reader import tokenizers
 from drqa.reader.simple_tokenizer import SimpleTokenizer
+import pandas
 
 # ------------------------------------------------------------------------------
 # Tokenize + annotate.
@@ -51,26 +49,7 @@ def tokenize(text):
 # ------------------------------------------------------------------------------
 
 
-def load_dataset(path):
-    """Load json file and store fields separately."""
-    with open(path) as f:
-        data = json.load(f)['data']
-    output = {'qids': [], 'questions': [], 'answers': [],
-              'contexts': [], 'qid2cid': []}
-    for article in data:
-        for paragraph in article['paragraphs']:
-            output['contexts'].append(paragraph['context'])
-            for qa in paragraph['qas']:
-                output['qids'].append(qa['id'])
-                output['questions'].append(qa['question'])
-                output['qid2cid'].append(len(output['contexts']) - 1)
-                if 'answers' in qa:
-                    output['answers'].append(qa['answers'])
-    return output
-
-
 def load_dataset_csv(path):
-    import pandas
     df = pandas.read_csv(path)
     output = {'qids': [], 'questions': [], 'answers': [],
               'contexts': [], 'qid2cid': []}
@@ -86,9 +65,6 @@ def load_dataset_csv(path):
         cid = contexts[row.paragraph]
         output['qid2cid'].append(cid)
         if 'answer' in row:
-            # [{'answer_start': 515, 'text': 'Saint Bernadette Soubirous'}]
-            # ' '.join(' '.join(re.findall(r"\w+", x)).lower()) in ' '.join(' '.join(re.findall(r"\w+", y)).lower())
-            # re.findall(r"\w+", output['contexts'][cid])
             output['answers'].append([{"text": row.answer}])
     return output
 
@@ -103,15 +79,16 @@ def find_answer(offsets, begin_offset, end_offset):
         return start[0], end[0]
 
 
-def find_answer_csv(offsets, document, tokens):
-    """Match token offsets with the char begin/end offsets of the answer."""
+def filter_tokens_in_answer(tokens):
     while tokens[-1] == '.' or tokens[-1] == '?':
         tokens = tokens[:-1]
     while tokens[0] == '.' or tokens[0] == '?':
         tokens = tokens[1:]
+    return tokens
+
+def find_answer_csv(offsets, document, tokens):
+    tokens = filter_tokens_in_answer(tokens)
     for i in range(len(document)):
-        # if i + len(tokens) > len(document):
-        # check
         if i + len(tokens) >= len(document):
             break
         success = True
@@ -124,7 +101,6 @@ def find_answer_csv(offsets, document, tokens):
 
     for i in range(len(document)):
         success = True
-        # if i + len(tokens) > len(document):
         if i + len(tokens) >= len(document):
             break
         for pos, token in enumerate(tokens):
@@ -134,26 +110,14 @@ def find_answer_csv(offsets, document, tokens):
         if success:
             return i, i + len(tokens)
 
-#     start = [i for i, tok in enumerate(offsets) if document[i].lower() == first_token]
-#     end = [i for i, tok in enumerate(offsets) if document[i].lower() == last_token]
-#     if len(start) != 1 or len(end) != 1:
-#         print(start)
-#         print(end)
-#         print(offsets)
-#         print(document)
-#         print(first_token)
-#         print(last_token)
-#     assert(len(start) == 1)
-#     assert(len(end) == 1)
-#     if len(start) == 1 and len(end) == 1:
-#         return start[0], end[0]
-
 
 def process_dataset(data, tokenizer, workers=None):
     """Iterate processing (tokenize, parse, etc) dataset multithreaded."""
     # tokenizer_class = tokenizers.get_class(tokenizer)
     tokenizer_class = SimpleTokenizer
     make_pool = partial(Pool, workers, initializer=init)
+    # Add good tokenizer and add pos and ner
+    # initargs=(tokenizer_class, {'annotators': {'lemma', 'pos', 'ner'}})
     workers = make_pool(initargs=(tokenizer_class, {'annotators': {'lemma'}}))
     q_tokens = workers.map(tokenize, data['questions'])
     workers.close()
@@ -161,6 +125,7 @@ def process_dataset(data, tokenizer, workers=None):
 
     workers = make_pool(
         initargs=(tokenizer_class, {'annotators': {'lemma'}})
+        # Add good tokenizer and add pos and ner
         # initargs=(tokenizer_class, {'annotators': {'lemma', 'pos', 'ner'}})
     )
     c_tokens = workers.map(tokenize, data['contexts'])
@@ -172,7 +137,7 @@ def process_dataset(data, tokenizer, workers=None):
     count_errors = 0
 
     for idx in range(len(data['qids'])):
-        question = q_tokens[idx]['words']
+        # question = q_tokens[idx]['words']
         qlemma = q_tokens[idx]['lemma']
         document = c_tokens[data['qid2cid'][idx]]['words']
         offsets = c_tokens[data['qid2cid'][idx]]['offsets']
@@ -185,9 +150,6 @@ def process_dataset(data, tokenizer, workers=None):
                 tokens = tokenize(ans['text'].lower())
                 found = find_answer_csv(offsets, document, tokens['words'])
                 if found is None:
-                    print(found)
-                    print(document)
-                    print(tokens['words'])
                     count_errors += 1
                 # assert(found is not None)
                 if found is not None:
