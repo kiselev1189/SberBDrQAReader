@@ -47,6 +47,7 @@ parser.add_argument('--batch_size', action='store',
 parser.add_argument('--num_workers', action='store',
                     help='num workers', default=4)
 args = parser.parse_args()
+print(args)
 
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 if args.cuda:
@@ -106,8 +107,9 @@ for i in tqdm.tqdm(chunks(list(range(df.shape[0])), int(args.batch_size))):
     question = df.question.iloc[i].values
     pred = predictor.predict_batch(zip(paragraph, question))
     # pred = predictor.predict(paragraph, question, None, 1)
-    result.extend(map(lambda x: x[0], pred))
+    result.extend(map(lambda x: x[0][0], pred))
 
 df['prediction'] = result
 
-df.to_csv(PREDICTION_FILE, header=True)
+import csv
+df[["paragraph_id", "question_id", "prediction"]].to_csv(PREDICTION_FILE, header=True, quoting=csv.QUOTE_NONNUMERIC, index=False)
