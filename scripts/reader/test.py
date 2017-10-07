@@ -48,7 +48,7 @@ parser.add_argument('--embedding_file', action='store',
 parser.add_argument('--batch_size', action='store',
                     help='batch size in pred', default=100)
 parser.add_argument('--num_workers', action='store',
-                    help='num workers', default=2)
+                    help='num workers, zero is disable multiprocessing', default=0)
 args = parser.parse_args()
 logging.info(str(args))
 

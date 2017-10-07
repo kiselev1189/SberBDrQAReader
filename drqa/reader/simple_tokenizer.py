@@ -29,10 +29,11 @@ class SimpleTokenizer(Tokenizer):
             '(%s)|(%s)' % (self.ALPHA_NUM, self.NON_WS),
             flags=regex.IGNORECASE + regex.UNICODE + regex.MULTILINE
         )
-        if len(kwargs.get('annotators', {})) > 0:
+        annotators = kwargs.get('annotators', {})
+        if len(annotators) > 0 and not ('lemma' in annotators and len(annotators) == 1):
             logger.warning('%s only tokenizes! Skipping annotators: %s' %
                            (type(self).__name__, kwargs.get('annotators')))
-        self.annotators = kwargs.get('annotators', {})
+        self.annotators = annotators
         if 'lemma' in self.annotators:
             self.ma = pymorphy2.MorphAnalyzer()
         else:
