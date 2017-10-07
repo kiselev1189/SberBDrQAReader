@@ -88,6 +88,5 @@ for i in tqdm.tqdm(chunks(list(range(df.shape[0])), int(args.batch_size))):
     result.extend(map(lambda x: x[0][0], pred))
 
 df['answer'] = result
-df['prediction'] = result
 
-df[["paragraph_id", "question_id", "prediction", "answer"]].to_csv(PREDICTION_FILE, header=True, quoting=csv.QUOTE_NONNUMERIC, index=False)
+df[["paragraph_id", "question_id", "answer"]].to_csv(PREDICTION_FILE, header=True, quoting=csv.QUOTE_NONNUMERIC, index=False)
